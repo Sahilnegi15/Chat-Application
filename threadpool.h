@@ -8,14 +8,15 @@
 #include <condition_variable>
 #include <functional>
 #include <future>
+using namespace std;
 
 class ThreadPool {
 private:
     int m_threadCount;
-    std::vector<std::thread> threads;
-    std::queue<std::function<void()>> tasks;
-    std::mutex mtx;
-    std::condition_variable cv;
+    vector<thread> threads;
+    queue<function<void()>> tasks;
+    mutex mtx;
+    condition_variable cv;
     bool stop;
 
 public:
@@ -23,16 +24,16 @@ public:
     ~ThreadPool();
 
     template <class F, class... Args>
-    auto ExecuteTask(F&& f, Args&&... args) -> std::future<decltype(f(args...))> {
+    auto ExecuteTask(F&& f, Args&&... args) -> future<decltype(f(args...))> {
         using return_type = decltype(f(args...));
 
-        auto task = std::make_shared<std::packaged_task<return_type()>>(
-            std::bind(std::forward<F>(f), std::forward<Args>(args)...)
+        auto task = make_shared<packaged_task<return_type()>>(
+            bind(forward<F>(f), forward<Args>(args)...)
         );
 
-        std::future<return_type> res = task->get_future();
+        future<return_type> res = task->get_future();
         {
-            std::unique_lock<std::mutex> lock(mtx);
+            unique_lock<mutex> lock(mtx);
             tasks.push([task]() { (*task)(); });
         }
         cv.notify_one();

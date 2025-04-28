@@ -4,9 +4,9 @@ ThreadPool::ThreadPool(int numThreads) : m_threadCount(numThreads), stop(false) 
     for (int i = 0; i < m_threadCount; ++i) {
         threads.emplace_back([this] {
             while (true) {
-                std::function<void()> task;
+                function<void()> task;
 
-                std::unique_lock<std::mutex> lock(mtx);
+                unique_lock<mutex> lock(mtx);
                 cv.wait(lock, [this] {
                     return !tasks.empty() || stop;
                 });
@@ -14,7 +14,7 @@ ThreadPool::ThreadPool(int numThreads) : m_threadCount(numThreads), stop(false) 
                 if (stop && tasks.empty())
                     return;
 
-                task = std::move(tasks.front());
+                task = move(tasks.front());
                 tasks.pop();
                 lock.unlock();
 
@@ -26,7 +26,7 @@ ThreadPool::ThreadPool(int numThreads) : m_threadCount(numThreads), stop(false) 
 
 ThreadPool::~ThreadPool() {
     {
-        std::unique_lock<std::mutex> lock(mtx);
+        unique_lock<std::mutex> lock(mtx);
         stop = true;
     }
     cv.notify_all();
